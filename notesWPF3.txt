@@ -1,0 +1,329 @@
+Oto zwięzłe przykłady dla trzech najbardziej prawdopodobnych zagadnień z Twoich ostatnich wykładów:
+
+1. Model MVVM i Komendy (Wykład 13)
+To kluczowy wzorzec w WPF. Pozwala na oddzielenie logiki od widoku za pomocą komend.
+
+ViewModel (Logic):
+
+C#
+public class MainViewModel : INotifyPropertyChanged
+{
+    private string _message;
+    public string Message 
+    { 
+        get => _message; 
+        set { _message = value; OnPropertyChanged(); } 
+    }
+
+    public ICommand ClickCommand => new RelayCommand(() => Message = "Witaj w WPF!");
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}
+View (XAML):
+
+XML
+<Button Content="Kliknij mnie" 
+        Command="{Binding ClickCommand}" 
+        Width="100" Height="50"/>
+<TextBlock Text="{Binding Message}" HorizontalAlignment="Center"/>
+2. Style i Szablony Kontrolek (Wykład 12)
+Przykład zmiany wyglądu przycisku na okrągły przy użyciu ControlTemplate.
+
+XML
+<Window.Resources>
+    <Style x:Key="RoundButtonStyle" TargetType="Button">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Ellipse x:Name="circle" Fill="DeepSkyBlue" Stroke="Black" StrokeThickness="2"/>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="circle" Property="Fill" Value="LightBlue"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</Window.Resources>
+
+<Button Style="{StaticResource RoundButtonStyle}" Content="OK" Width="60" Height="60"/>
+3. Animacje (Wykład 13)
+Przykład animacji zmiany szerokości prostokąta po naciśnięciu przycisku.
+
+XML
+<StackPanel>
+    <Rectangle x:Name="MyRect" Fill="Red" Width="50" Height="50" HorizontalAlignment="Left"/>
+    
+    <Button Content="Animuj">
+        <Button.Triggers>
+            <EventTrigger RoutedEvent="Button.Click">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetName="MyRect" 
+                                         Storyboard.TargetProperty="Width"
+                                         From="50" To="300" Duration="0:0:2" 
+                                         AutoReverse="True"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Button.Triggers>
+    </Button>
+</StackPanel>
+Na co uważać na labach?
+
+W MVVM pamiętaj o ustawieniu this.DataContext = new MainViewModel(); w konstruktorze okna.
+
+W Szablonach nie zapomnij o ContentPresenter, inaczej tekst na przycisku zniknie.
+
+W Animacjach upewnij się, że animowana właściwość (np. Width) ma ustawioną wartość początkową.
+
+
+Tworzenie grafiki i animacji 3D w WPF (Windows Presentation Foundation) opiera się na dedykowanej przestrzeni nazw System.Windows.Media.Media3D. Architektura ta wykorzystuje DirectX, co pozwala na sprzętowe wspomaganie renderowania.
+
+1. Kluczowe komponenty sceny 3D
+Aby wyświetlić cokolwiek w 3D, musisz zbudować hierarchię obiektów wewnątrz kontrolki Viewport3D.
+
+Viewport3D: "Okno", przez które patrzymy na świat 3D.
+
+Camera: Określa punkt widzenia (najczęściej PerspectiveCamera).
+
+ModelVisual3D: Kontener na modele i światła.
+
+GeometryModel3D: Definiuje kształt (siatkę/mesh) i materiał.
+
+Light: Bez światła (np. AmbientLight lub DirectionalLight) model będzie czarny.
+
+2. Przykład: Prosty Trójkąt 3D (XAML)
+WPF operuje na trójkątach. Każda bryła składa się z wierzchołków (Positions) oraz indeksów (TriangleIndices).
+
+XML
+<Viewport3D>
+    <!-- Kamera -->
+    <Viewport3D.Camera>
+        <PerspectiveCamera Position="0,0,5" LookDirection="0,0,-1" UpDirection="0,1,0" FieldOfView="45" />
+    </Viewport3D.Camera>
+
+    <!-- Zawartość sceny -->
+    <ModelVisual3D>
+        <ModelVisual3D.Content>
+            <Model3DGroup>
+                <!-- Światło -->
+                <DirectionalLight Color="White" Direction="-1,-1,-3" />
+
+                <!-- Model -->
+                <GeometryModel3D>
+                    <GeometryModel3D.Geometry>
+                        <MeshGeometry3D 
+                            Positions="-1,-1,0 1,-1,0 0,1,0" 
+                            TriangleIndices="0 1 2" />
+                    </GeometryModel3D.Geometry>
+                    <GeometryModel3D.Material>
+                        <DiffuseMaterial Brush="Blue" />
+                    </GeometryModel3D.Material>
+                </GeometryModel3D>
+            </Model3DGroup>
+        </ModelVisual3D.Content>
+    </ModelVisual3D>
+</Viewport3D>
+3. Animacja 3D
+Animowanie w WPF 3D polega na modyfikowaniu właściwości transformacji (Transform3D). Najczęściej używa się Rotation3DAnimation.
+
+Jak wprawić obiekt w ruch?
+Zdefiniuj transformację dla modelu (RotateTransform3D).
+
+Użyj Storyboard, aby zmienić kąt obrotu w czasie.
+
+Przykład rotacji (C#):
+C#
+var rotation = new AxisAngleRotation3D(new Vector3D(0, 1, 0), 0);
+myModel.Transform = new RotateTransform3D(rotation);
+
+DoubleAnimation anim = new DoubleAnimation()
+{
+    From = 0,
+    To = 360,
+    Duration = TimeSpan.FromSeconds(5),
+    RepeatBehavior = RepeatBehavior.Forever
+};
+
+rotation.BeginAnimation(AxisAngleRotation3D.AngleProperty, anim);
+4. Dobre praktyki i ograniczenia
+Wydajność: WPF nie jest silnikiem do gier (jak Unity). Nadaje się do wizualizacji produktów lub prostych interfejsów, ale przy setkach tysięcy poligonów zwolni.
+
+Modele zewnętrzne: WPF natywnie nie wspiera formatów takich jak .obj czy .fbx. Musisz użyć bibliotek zewnętrznych, np. Helix Toolkit, która znacznie upraszcza pracę z 3D w WPF.
+
+Hit Testing: WPF pozwala sprawdzać, w który obiekt 3D kliknął użytkownik, używając metody VisualTreeHelper.HitTest.
+
+Jakie konkretne zastosowanie 3D Cię interesuje – wizualizacja danych, interaktywny model, czy efekty wizualne w UI?
+
+
+
+
+
+Tworzenie grafiki i animacji 3D w WPF (Windows Presentation Foundation) opiera się na dedykowanej przestrzeni nazw System.Windows.Media.Media3D. Architektura ta wykorzystuje DirectX, co pozwala na sprzętowe wspomaganie renderowania.
+
+1. Kluczowe komponenty sceny 3D
+Aby wyświetlić cokolwiek w 3D, musisz zbudować hierarchię obiektów wewnątrz kontrolki Viewport3D.
+
+Viewport3D: "Okno", przez które patrzymy na świat 3D.
+
+Camera: Określa punkt widzenia (najczęściej PerspectiveCamera).
+
+ModelVisual3D: Kontener na modele i światła.
+
+GeometryModel3D: Definiuje kształt (siatkę/mesh) i materiał.
+
+Light: Bez światła (np. AmbientLight lub DirectionalLight) model będzie czarny.
+
+2. Przykład: Prosty Trójkąt 3D (XAML)
+WPF operuje na trójkątach. Każda bryła składa się z wierzchołków (Positions) oraz indeksów (TriangleIndices).
+
+XML
+<Viewport3D>
+    <!-- Kamera -->
+    <Viewport3D.Camera>
+        <PerspectiveCamera Position="0,0,5" LookDirection="0,0,-1" UpDirection="0,1,0" FieldOfView="45" />
+    </Viewport3D.Camera>
+
+    <!-- Zawartość sceny -->
+    <ModelVisual3D>
+        <ModelVisual3D.Content>
+            <Model3DGroup>
+                <!-- Światło -->
+                <DirectionalLight Color="White" Direction="-1,-1,-3" />
+
+                <!-- Model -->
+                <GeometryModel3D>
+                    <GeometryModel3D.Geometry>
+                        <MeshGeometry3D 
+                            Positions="-1,-1,0 1,-1,0 0,1,0" 
+                            TriangleIndices="0 1 2" />
+                    </GeometryModel3D.Geometry>
+                    <GeometryModel3D.Material>
+                        <DiffuseMaterial Brush="Blue" />
+                    </GeometryModel3D.Material>
+                </GeometryModel3D>
+            </Model3DGroup>
+        </ModelVisual3D.Content>
+    </ModelVisual3D>
+</Viewport3D>
+3. Animacja 3D
+Animowanie w WPF 3D polega na modyfikowaniu właściwości transformacji (Transform3D). Najczęściej używa się Rotation3DAnimation.
+
+Jak wprawić obiekt w ruch?
+Zdefiniuj transformację dla modelu (RotateTransform3D).
+
+Użyj Storyboard, aby zmienić kąt obrotu w czasie.
+
+Przykład rotacji (C#):
+C#
+var rotation = new AxisAngleRotation3D(new Vector3D(0, 1, 0), 0);
+myModel.Transform = new RotateTransform3D(rotation);
+
+DoubleAnimation anim = new DoubleAnimation()
+{
+    From = 0,
+    To = 360,
+    Duration = TimeSpan.FromSeconds(5),
+    RepeatBehavior = RepeatBehavior.Forever
+};
+
+rotation.BeginAnimation(AxisAngleRotation3D.AngleProperty, anim);
+4. Dobre praktyki i ograniczenia
+Wydajność: WPF nie jest silnikiem do gier (jak Unity). Nadaje się do wizualizacji produktów lub prostych interfejsów, ale przy setkach tysięcy poligonów zwolni.
+
+Modele zewnętrzne: WPF natywnie nie wspiera formatów takich jak .obj czy .fbx. Musisz użyć bibliotek zewnętrznych, np. Helix Toolkit, która znacznie upraszcza pracę z 3D w WPF.
+
+Hit Testing: WPF pozwala sprawdzać, w który obiekt 3D kliknął użytkownik, używając metody VisualTreeHelper.HitTest.
+
+Jakie konkretne zastosowanie 3D Cię interesuje – wizualizacja danych, interaktywny model, czy efekty wizualne w UI?
+
+
+
+
+
+
+
+
+Uruchamianie animacji bezpośrednio z poziomu C# daje Ci większą kontrolę nad logiką aplikacji – możesz np. uzależnić ruch obiektu od pozycji myszy lub wyniku obliczeń.
+
+W WPF istnieją dwa główne sposoby na robienie tego w kodzie: metoda prosta (bezpośrednia) oraz metoda zaawansowana (z użyciem Storyboard).
+
+1. Metoda prosta: BeginAnimation
+Jest to najszybszy sposób na animowanie konkretnej właściwości obiektu. Każdy element interfejsu (np. Button, Rectangle, Grid) posiada metodę BeginAnimation.
+
+Przykład: Płynne znikanie elementu
+
+C#
+DoubleAnimation fadeAnim = new DoubleAnimation
+{
+    From = 1.0,
+    To = 0.0,
+    Duration = TimeSpan.FromSeconds(2)
+};
+
+// TargetProperty: OpacityProperty
+myElement.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
+2. Metoda zaawansowana: Storyboard w C#
+Jeśli chcesz uruchomić kilka animacji jednocześnie lub po sobie (np. jednoczesne przesuwanie i zmiana koloru), użyj klasy Storyboard. Działa ona jak "reżyser" całej sekwencji.
+
+Przykład: Złożona animacja przycisku
+
+C#
+// 1. Tworzymy animację szerokości
+DoubleAnimation widthAnim = new DoubleAnimation(100, 300, TimeSpan.FromSeconds(0.5));
+Storyboard.SetTarget(widthAnim, myButton);
+Storyboard.SetTargetProperty(widthAnim, new PropertyPath(Button.WidthProperty));
+
+// 2. Tworzymy animację koloru
+ColorAnimation colorAnim = new ColorAnimation(Colors.Blue, Colors.Red, TimeSpan.FromSeconds(0.5));
+Storyboard.SetTarget(colorAnim, myButton);
+// Uwaga: Animowanie koloru tła wymaga ścieżki do Brusha
+Storyboard.SetTargetProperty(colorAnim, new PropertyPath("(Button.Background).(SolidColorBrush.Color)"));
+
+// 3. Łączymy w Storyboard i startujemy
+Storyboard sb = new Storyboard();
+sb.Children.Add(widthAnim);
+sb.Children.Add(colorAnim);
+sb.Begin();
+3. Obsługa zdarzeń (Callbacks)
+Często po zakończeniu animacji musisz wykonać jakąś akcję (np. zamknąć okno lub zacząć kolejny proces). Służy do tego zdarzenie Completed.
+
+C#
+DoubleAnimation anim = new DoubleAnimation(0, 100, TimeSpan.FromSeconds(1));
+
+anim.Completed += (s, e) => 
+{
+    MessageBox.Show("Animacja zakończona!");
+    // Tutaj możesz np. usunąć obiekt z UI
+};
+
+myObject.BeginAnimation(Canvas.LeftProperty, anim);
+4. Animowanie transformacji (Obrót, Skalowanie)
+W WPF nie animuje się "obrotu" jako właściwości przycisku, lecz właściwość obiektu RenderTransform. W kodzie wymaga to przypisania transformacji do elementu.
+
+C#
+// Przygotowanie transformacji w kodzie
+RotateTransform rotate = new RotateTransform(0);
+myButton.RenderTransformOrigin = new Point(0.5, 0.5); // Środek obrotu
+myButton.RenderTransform = rotate;
+
+// Animacja kąta
+DoubleAnimation angleAnim = new DoubleAnimation(0, 360, TimeSpan.FromSeconds(2))
+{
+    RepeatBehavior = RepeatBehavior.Forever
+};
+
+rotate.BeginAnimation(RotateTransform.AngleProperty, angleAnim);
+Podsumowanie – kiedy co wybrać?
+BeginAnimation: Gdy chcesz szybko zmienić jedną wartość (np. szerokość przy najechaniu myszą).
+
+Storyboard: Gdy tworzysz skomplikowane sekwencje, chcesz mieć możliwość pauzowania (sb.Pause()) lub synchronizacji wielu obiektów.
+
+Czy chcesz, abym pokazał Ci, jak stworzyć płynne przejście między dwoma widokami aplikacji za pomocą tych metod?
